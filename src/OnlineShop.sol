@@ -2,9 +2,13 @@
 pragma solidity ^0.8.0;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
+import {NFT} from "./NFT.sol";
 
 contract OnlineShop is Ownable {
+    NFT public _nft;
+
     // Struct to represent a product
     struct Product {
         uint256 productId;
@@ -29,8 +33,9 @@ contract OnlineShop is Ownable {
         string image
     );
 
-    // Constructor to set the contract owner
-    constructor() Ownable(msg.sender) {}
+    constructor(address nft_address) Ownable(msg.sender) {
+        _nft = NFT(nft_address);
+    }
 
     // Function to add a new product, restricted to the owner
     function addProduct(
@@ -58,6 +63,10 @@ contract OnlineShop is Ownable {
         emit ProductAdded(_productId, _name, _price, _image);
 
         productId++;
+    }
+
+    function getProductPrice(uint _productId) public view returns (uint256) {
+        return products[_productId].price;
     }
 
     // Function to check if a product exists
@@ -92,5 +101,16 @@ contract OnlineShop is Ownable {
 
     function deleteProduct(uint _productId) public onlyOwner {
         products[_productId].deletedAt = block.timestamp;
+    }
+
+    function purchase(uint256 _productId) public payable {
+        require(msg.value > 0, "You should give more than 0 dollars");
+        require(msg.value >= products[_productId].price, "Not enough money");
+        _nft.safeMint(msg.sender);
+    }
+
+    function withdraw() public payable onlyOwner {
+        (bool success, ) = owner().call{value: address(this).balance}("");
+        require(success, "Failed to withdraw");
     }
 }

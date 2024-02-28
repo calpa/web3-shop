@@ -4,9 +4,12 @@ pragma solidity ^0.8.0;
 import {Test, console} from "forge-std/Test.sol";
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 import {OnlineShop} from "../src/OnlineShop.sol";
+import {NFT} from "../src/NFT.sol";
 
+// import "../src/Receipt.sol";
 // Struct to represent a product
 struct Product {
     uint256 productId;
@@ -20,11 +23,19 @@ struct Product {
 
 contract OnlineShopTest is Test {
     OnlineShop onlineShop;
+    NFT _nft;
     address Alice = makeAddr("Alice");
+    address Bob = makeAddr("Bob");
+    bytes32 public constant MINTER = keccak256("MINTER");
 
     function setUp() public {
-        onlineShop = new OnlineShop();
-        onlineShop.addProduct("Apple", 100, "image1");
+        _nft = new NFT();
+        onlineShop = new OnlineShop(address(_nft));
+        onlineShop.addProduct("Apple", 0.1 ether, "image1");
+        _nft.grantRole(MINTER, address(onlineShop));
+        vm.deal(address(this), 100 ether);
+        // _nft.transferOwnership(address(onlineShop));
+        // _nft = NFT(onlineShop._nft.address);
     }
 
     // Create
@@ -49,8 +60,8 @@ contract OnlineShopTest is Test {
     function test_add_multiple_products() public {
         // test_add_product();
 
-        onlineShop.addProduct("Banana", 200, "image2");
-        onlineShop.addProduct("Orange", 300, "image3");
+        onlineShop.addProduct("Banana", 0.2 ether, "image2");
+        onlineShop.addProduct("Orange", 0.3 ether, "image3");
         (
             uint256 productId2,
             string memory name2,
@@ -63,7 +74,7 @@ contract OnlineShopTest is Test {
 
         assertEq(productId2, 2);
         assertEq(name2, "Banana");
-        assertEq(price2, 200);
+        assertEq(price2, 0.2 ether);
         assertEq(image2, "image2");
 
         (
@@ -78,7 +89,7 @@ contract OnlineShopTest is Test {
 
         assertEq(productId3, 3);
         assertEq(name3, "Orange");
-        assertEq(price3, 300);
+        assertEq(price3, 0.3 ether);
         assertEq(image3, "image3");
     }
 
@@ -96,7 +107,7 @@ contract OnlineShopTest is Test {
 
         assertEq(productId1, 1);
         assertEq(name1, "Apple");
-        assertEq(price1, 100);
+        assertEq(price1, 0.1 ether);
         assertEq(image2, "image1");
     }
 
@@ -122,12 +133,12 @@ contract OnlineShopTest is Test {
 
     function test_update_price() public {
         (, , uint256 price, , , , ) = onlineShop.products(1);
-        assertEq(price, 100);
+        assertEq(price, 0.1 ether);
 
-        onlineShop.updateProductPrice(1, 200);
+        onlineShop.updateProductPrice(1, 0.2 ether);
 
         (, , uint256 price_after, , , , ) = onlineShop.products(1);
-        assertEq(price_after, 200);
+        assertEq(price_after, 0.2 ether);
     }
 
     // Delete
@@ -172,5 +183,82 @@ contract OnlineShopTest is Test {
         );
 
         onlineShop.deleteProduct(1);
+    }
+
+    // NFT
+
+    function test_nft_safe_mint_without_permission_1() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                address(this),
+                MINTER
+            )
+        );
+        _nft.safeMint(Alice);
+    }
+
+    function test_nft_safe_mint_without_permission_2() public {
+        vm.startPrank(Alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                address(Alice),
+                MINTER
+            )
+        );
+        _nft.safeMint(Alice);
+    }
+
+    function test_purchase_item_1() public {
+        uint256 price = onlineShop.getProductPrice(1);
+
+        onlineShop.purchase{value: price}(1);
+        assertEq(address(this).balance, 99.9 ether);
+    }
+
+    function test_purchase_item_2() public {
+        test_add_multiple_products();
+
+        uint256 price = onlineShop.getProductPrice(2);
+
+        onlineShop.purchase{value: price}(2);
+        assertEq(address(this).balance, 99.8 ether);
+    }
+
+    function test_withdraw() public {
+        test_purchase_item_1();
+        onlineShop.withdraw();
+        assertEq(address(this).balance, 100 ether);
+        // console.log("Balance", address(this).balance);
+    }
+
+    function test_withdraw_without_permission() public {
+        test_purchase_item_1();
+        vm.startPrank(Alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Ownable.OwnableUnauthorizedAccount.selector,
+                Alice
+            )
+        );
+        onlineShop.withdraw();
+    }
+
+    receive() external payable {}
+
+    fallback() external payable {}
+
+    // function test_purchase_multiple() public {
+    //     test_purchase_item_1();
+    // }
+
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes memory
+    ) external returns (bytes4) {
+        return this.onERC721Received.selector;
     }
 }

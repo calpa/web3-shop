@@ -6,22 +6,24 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 import {OnlineShop} from "../src/OnlineShop.sol";
-import {NFT} from "../src/NFT.sol";
+
+// import {NFT} from "../src/NFT.sol";
 
 contract OnlineShopTest is Test {
     event Purchase(uint256 productId);
 
     OnlineShop onlineShop;
-    NFT _nft;
+    // NFT _nft;
     address Alice = makeAddr("Alice");
     address Bob = makeAddr("Bob");
     bytes32 public constant MINTER = keccak256("MINTER");
 
     function setUp() public {
-        _nft = new NFT();
-        onlineShop = new OnlineShop(address(_nft));
+        // _nft = new NFT();
+        // onlineShop = new OnlineShop(address(_nft));
+        onlineShop = new OnlineShop();
         onlineShop.addProduct("Apple", 0.1 ether, "image1", 100);
-        _nft.grantRole(MINTER, address(onlineShop));
+        // _nft.grantRole(MINTER, address(onlineShop));
         vm.deal(address(this), 100 ether);
     }
 
@@ -176,28 +178,28 @@ contract OnlineShopTest is Test {
 
     // NFT
 
-    function test_nft_safe_mint_without_permission_1() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                address(this),
-                MINTER
-            )
-        );
-        _nft.safeMint(Alice);
-    }
+    // function test_nft_safe_mint_without_permission_1() public {
+    //     vm.expectRevert(
+    //         abi.encodeWithSelector(
+    //             IAccessControl.AccessControlUnauthorizedAccount.selector,
+    //             address(this),
+    //             MINTER
+    //         )
+    //     );
+    //     _nft.safeMint(Alice);
+    // }
 
-    function test_nft_safe_mint_without_permission_2() public {
-        vm.startPrank(Alice);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                address(Alice),
-                MINTER
-            )
-        );
-        _nft.safeMint(Alice);
-    }
+    // function test_nft_safe_mint_without_permission_2() public {
+    //     vm.startPrank(Alice);
+    //     vm.expectRevert(
+    //         abi.encodeWithSelector(
+    //             IAccessControl.AccessControlUnauthorizedAccount.selector,
+    //             address(Alice),
+    //             MINTER
+    //         )
+    //     );
+    //     _nft.safeMint(Alice);
+    // }
 
     function test_purchase_item_1() public {
         uint256 price = onlineShop.getProductPrice(1);

@@ -3,12 +3,12 @@ pragma solidity ^0.8.0;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-import {NFT} from "./NFT.sol";
+// import {NFT} from "./NFT.sol";
 
 contract OnlineShop is Ownable {
     event Purchase(uint256 productId);
 
-    NFT public _nft;
+    // NFT public _nft;
 
     struct Product {
         uint256 productId;
@@ -32,8 +32,8 @@ contract OnlineShop is Ownable {
         string image
     );
 
-    constructor(address nft_address) Ownable(msg.sender) {
-        _nft = NFT(nft_address);
+    constructor() Ownable(msg.sender) {
+        // _nft = NFT(nft_address);
     }
 
     function addProduct(

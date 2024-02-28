@@ -2,14 +2,14 @@
 pragma solidity ^0.8.0;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 
 import {NFT} from "./NFT.sol";
 
 contract OnlineShop is Ownable {
+    event Purchase(uint256 productId);
+
     NFT public _nft;
 
-    // Struct to represent a product
     struct Product {
         uint256 productId;
         string name;
@@ -17,15 +17,14 @@ contract OnlineShop is Ownable {
         uint256 createdAt;
         uint256 updatedAt;
         uint256 deletedAt;
-        string image; // Assuming image is stored as a string (e.g., IPFS hash)
+        string image;
+        uint256 amount;
     }
 
     uint256 productId;
 
-    // Mapping to store products by their ID
     mapping(uint => Product) public products;
 
-    // Event to emit when a new product is added
     event ProductAdded(
         uint productId,
         string name,
@@ -37,18 +36,17 @@ contract OnlineShop is Ownable {
         _nft = NFT(nft_address);
     }
 
-    // Function to add a new product, restricted to the owner
     function addProduct(
         string memory _name,
         uint256 _price,
-        string memory _image
+        string memory _image,
+        uint256 _amount
     ) external onlyOwner {
         uint256 _productId = productId + 1;
 
         // Check if the product already exists
         require(!isProductExist(_productId), "Product already exists");
 
-        // Add the product
         products[_productId] = Product({
             productId: _productId,
             name: _name,
@@ -56,10 +54,10 @@ contract OnlineShop is Ownable {
             createdAt: block.timestamp,
             updatedAt: block.timestamp,
             deletedAt: 0,
-            image: _image
+            image: _image,
+            amount: _amount
         });
 
-        // Emit an event
         emit ProductAdded(_productId, _name, _price, _image);
 
         productId++;
@@ -106,7 +104,10 @@ contract OnlineShop is Ownable {
     function purchase(uint256 _productId) public payable {
         require(msg.value > 0, "You should give more than 0 dollars");
         require(msg.value >= products[_productId].price, "Not enough money");
-        _nft.safeMint(msg.sender);
+        require(products[_productId].amount > 0, "No more items available");
+        products[_productId].amount -= 1;
+        emit Purchase(_productId);
+        // _nft.safeMint(msg.sender);
     }
 
     function withdraw() public payable onlyOwner {

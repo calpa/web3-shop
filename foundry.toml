@@ -4,3 +4,7 @@ out = "out"
 libs = ["lib"]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+[rpc_endpoints]
+buildbear = "https://rpc.buildbear.io/required-lockjaw-2f402d26"
+[etherscan]
+buildbear = { key = "verifyContract", url="https://rpc.buildbear.io/verify/etherscan/required-lockjaw-2f402d26" }

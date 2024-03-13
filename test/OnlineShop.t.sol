@@ -22,14 +22,26 @@ contract OnlineShopTest is Test {
         // _nft = new NFT();
         // onlineShop = new OnlineShop(address(_nft));
         onlineShop = new OnlineShop();
-        onlineShop.addProduct("Apple", 0.1 ether, "image1", 100);
+        onlineShop.addProduct(
+            "Apple",
+            0.1 ether,
+            "image1",
+            100,
+            "Apple Description"
+        );
         // _nft.grantRole(MINTER, address(onlineShop));
         vm.deal(address(this), 100 ether);
     }
 
     // Create
     function test_add_product() public {
-        onlineShop.addProduct("Banana", 200, "image2", 100);
+        onlineShop.addProduct(
+            "Banana",
+            200,
+            "image2",
+            100,
+            "Banana Description"
+        );
         (
             uint256 productId2,
             string memory name2,
@@ -38,6 +50,7 @@ contract OnlineShopTest is Test {
             ,
             ,
             string memory image2,
+            ,
 
         ) = onlineShop.products(2);
 
@@ -48,7 +61,13 @@ contract OnlineShopTest is Test {
     }
 
     function test_add_multiple_products() public {
-        onlineShop.addProduct("Banana", 0.2 ether, "image2", 100);
+        onlineShop.addProduct(
+            "Banana",
+            0.2 ether,
+            "image2",
+            100,
+            "Banana Description"
+        );
         onlineShop.addProduct("Orange", 0.3 ether, "image3", 100);
         (
             uint256 productId2,
@@ -58,6 +77,7 @@ contract OnlineShopTest is Test {
             ,
             ,
             string memory image2,
+            ,
 
         ) = onlineShop.products(2);
 
@@ -74,6 +94,7 @@ contract OnlineShopTest is Test {
             ,
             ,
             string memory image3,
+            ,
 
         ) = onlineShop.products(3);
 
@@ -93,6 +114,7 @@ contract OnlineShopTest is Test {
             ,
             ,
             string memory image2,
+            ,
 
         ) = onlineShop.products(1);
 
@@ -112,30 +134,30 @@ contract OnlineShopTest is Test {
 
     // Update
     function test_update_product() public {
-        (, string memory name_before, , , , , , ) = onlineShop.products(1);
+        (, string memory name_before, , , , , , , ) = onlineShop.products(1);
         assertEq(name_before, "Apple");
 
         onlineShop.updateProductName(1, "Fuji Apple");
 
-        (, string memory name_after, , , , , , ) = onlineShop.products(1);
+        (, string memory name_after, , , , , , , ) = onlineShop.products(1);
 
         assertEq(name_after, "Fuji Apple");
     }
 
     function test_update_price() public {
-        (, , uint256 price, , , , , ) = onlineShop.products(1);
+        (, , uint256 price, , , , , , ) = onlineShop.products(1);
         assertEq(price, 0.1 ether);
 
         onlineShop.updateProductPrice(1, 0.2 ether);
 
-        (, , uint256 price_after, , , , , ) = onlineShop.products(1);
+        (, , uint256 price_after, , , , , , ) = onlineShop.products(1);
         assertEq(price_after, 0.2 ether);
     }
 
     // Delete
     function test_delete_product() public {
         onlineShop.deleteProduct(1);
-        (, , , , , uint256 deletedAt, , ) = onlineShop.products(1);
+        (, , , , , uint256 deletedAt, , , ) = onlineShop.products(1);
         assertGt(deletedAt, 0);
     }
 
@@ -210,7 +232,7 @@ contract OnlineShopTest is Test {
         onlineShop.purchase{value: price}(1);
         assertEq(address(this).balance, 99.9 ether);
 
-        (, , , , , , , uint256 amount) = onlineShop.products(1);
+        (, , , , , , , uint256 amount, ) = onlineShop.products(1);
         assertEq(amount, 99);
     }
 
@@ -219,12 +241,12 @@ contract OnlineShopTest is Test {
 
         onlineShop.purchase{value: price}(1);
         assertEq(address(this).balance, 99.9 ether);
-        (, , , , , , , uint256 amount) = onlineShop.products(1);
+        (, , , , , , , uint256 amount, ) = onlineShop.products(1);
         assertEq(amount, 99);
 
         onlineShop.purchase{value: price}(1);
         assertEq(address(this).balance, 99.8 ether);
-        (, , , , , , , uint256 amount2) = onlineShop.products(1);
+        (, , , , , , , uint256 amount2, ) = onlineShop.products(1);
         assertEq(amount2, 98);
     }
 
@@ -234,7 +256,7 @@ contract OnlineShopTest is Test {
 
     function testFuzz_purchase_item_1(uint8 n) public {
         uint256 price = onlineShop.getProductPrice(1);
-        (, , , , , , , uint256 amount) = onlineShop.products(1);
+        (, , , , , , , uint256 amount, ) = onlineShop.products(1);
         vm.assume(n <= amount);
         while (n > 0) {
             uint256 balance = address(this).balance;

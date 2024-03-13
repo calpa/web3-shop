@@ -19,6 +19,7 @@ contract OnlineShop is Ownable {
         uint256 deletedAt;
         string image;
         uint256 amount;
+        string description;
     }
 
     uint256 productId;
@@ -41,7 +42,17 @@ contract OnlineShop is Ownable {
         uint256 _price,
         string memory _image,
         uint256 _amount
-    ) external onlyOwner {
+    ) public onlyOwner {
+        addProduct(_name, _price, _image, _amount, "");
+    }
+
+    function addProduct(
+        string memory _name,
+        uint256 _price,
+        string memory _image,
+        uint256 _amount,
+        string memory _description
+    ) public onlyOwner {
         uint256 _productId = productId + 1;
 
         // Check if the product already exists
@@ -55,7 +66,8 @@ contract OnlineShop is Ownable {
             updatedAt: block.timestamp,
             deletedAt: 0,
             image: _image,
-            amount: _amount
+            amount: _amount,
+            description: _description
         });
 
         emit ProductAdded(_productId, _name, _price, _image);
@@ -64,6 +76,7 @@ contract OnlineShop is Ownable {
     }
 
     function getProductPrice(uint _productId) public view returns (uint256) {
+        require(isProductExist(_productId), "Product Not Exist");
         return products[_productId].price;
     }
 
